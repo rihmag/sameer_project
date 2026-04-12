@@ -1,0 +1,7 @@
+path: /Users/anantgambhir/Hello Ji/sameer_project/weapons_data_set/weapon_detection
+train: train/images
+val: val/images
+
+# Classes
+nc: 1
+names: ['weapon']
