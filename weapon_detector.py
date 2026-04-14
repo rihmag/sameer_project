@@ -9,6 +9,11 @@ class WeaponDetector:
         """Perform detection on the provided frame."""
         return self.model(frame, conf=conf)
 
-    def plot(self, results):
+    def plot(self, results, generic_label=False):
         """Return an annotated frame from the detection results."""
+        if generic_label:
+            # Override the names dictionary in the results object
+            # mapping every class ID to the generic "Weapon" label.
+            for r in results:
+                r.names = {i: "Weapon" for i in r.names}
         return results[0].plot()
