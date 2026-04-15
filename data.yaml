@@ -1,4 +1,4 @@
-path: /Users/anantgambhir/Hello Ji/sameer_project/weapon_data_set  # Ensure this matches the actual folder name
+path: /Users/anantgambhir/Hello Ji/sameer_project/weapons_data_set/weapon_detection  # Ensure this matches the actual folder name
 train: train/images
 val: val/images
 

@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 2
+names: ['NonViolence', 'Violence']
+
+roboflow:
+  workspace: east-west-uniersity
+  project: violance-nonviolance
+  version: 7
+  license: Public Domain
+  url: https://universe.roboflow.com/east-west-uniersity/violance-nonviolance/dataset/7
