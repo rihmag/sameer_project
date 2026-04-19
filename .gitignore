@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.env
+
+# IDE and Tooling
+.vscode/
+.idea/
+tempCodeRunnerFile.py
+.DS_Store
+
+# YOLO / Training Outputs
+# Large model files and training logs should typically stay out of Git
+runs/
+*.pt
+
+# Datasets
+# Datasets are usually too large for GitHub
+Guns-dataset/
+self-defence-test/
+self_defence_test/
+videos/
+fights/
+
+# Video and Media files
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.flv
+*.webm
+*.jpg
+*.png
