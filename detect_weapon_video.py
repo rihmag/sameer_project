@@ -3,7 +3,7 @@ from weapon_detector import WeaponDetector
 
 def main():
     # Initialize detector
-    detector = WeaponDetector(model_path="runs/detect/weapon_yolo_model10/weights/best.pt")
+    detector = WeaponDetector(model_path="runs/detect/weapon_yolo_model11/weights/best.pt")
 
     # Open webcam (0 = default camera)
     cap = cv2.VideoCapture(0)

@@ -1,57 +1,82 @@
-# script for fight detect 
 import cv2
 from ultralytics import YOLO
+import os
+import glob
 
 def main():
-    # Load your trained fight detection model
-    model = YOLO("runs/detect/fight_detect_model/weights/best.pt")  
-    # ⚠️ change path if needed
+    # Load fight detection model
+    model = YOLO("runs/detect/fight_detect_model2/weights/best.pt")
 
-    # Open webcam
-    cap = cv2.VideoCapture(0)
+    # Folder path (same structure as your weapon script)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    video_folder = os.path.join(script_dir, "self_defence_test")  # ⚠️ change if needed
 
-    if not cap.isOpened():
-        print("Error: Could not access webcam.")
+    # Check folder
+    if not os.path.exists(video_folder):
+        print(f"Error: Video folder '{video_folder}' not found.")
         return
 
-    print("Webcam started. Press 'q' to exit.")
+    # Collect videos
+    video_extensions = ['*.mp4', '*.avi', '*.mov', '*.mkv', '*.flv', '*.webm']
+    video_files = []
+    for ext in video_extensions:
+        video_files.extend(glob.glob(os.path.join(video_folder, ext)))
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Error: Failed to read frame.")
-            break
+    if not video_files:
+        print("No videos found.")
+        return
 
-        # Run inference
-        results = model(frame, conf=0.5)
+    print(f"Found {len(video_files)} video(s).")
 
-        detected_classes = []
+    # Loop through each video
+    for video_path in video_files:
+        print(f"\nProcessing: {os.path.basename(video_path)}")
 
-        # Extract detected class names
-        for r in results:
-            if r.boxes is not None:
-                for box in r.boxes:
-                    cls_id = int(box.cls[0])
-                    class_name = model.names[cls_id]
-                    detected_classes.append(class_name)
+        cap = cv2.VideoCapture(video_path)
 
-        # Print detections
-        if detected_classes:
-            print(f"Detected: {', '.join(set(detected_classes))}")
+        if not cap.isOpened():
+            print(f"Error opening {video_path}")
+            continue
 
-        # Annotate frame
-        annotated_frame = results[0].plot()
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print(f"End of video: {os.path.basename(video_path)}")
+                break
 
-        # Show output
-        cv2.imshow("Fight Detection - Webcam", annotated_frame)
+            # Run YOLO
+            results = model(frame, conf=0.5)
 
-        # Exit key
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            detected_classes = []
 
-    cap.release()
-    cv2.destroyAllWindows()
-    print("Webcam stopped.")
+            for r in results:
+                if r.boxes is not None:
+                    for box in r.boxes:
+                        cls_id = int(box.cls[0])
+                        class_name = model.names[cls_id]
+                        detected_classes.append(class_name)
+
+            # Print detections
+            if detected_classes:
+                print(f"  Frame detections: {', '.join(set(detected_classes))}")
+
+            # Draw boxes
+            annotated_frame = results[0].plot()
+
+            # Show frame (same style as yours)
+            cv2.imshow(f"Fight Detection - {os.path.basename(video_path)}", annotated_frame)
+
+            # Exit logic (same as yours)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                cap.release()
+                cv2.destroyAllWindows()
+                print("Exiting...")
+                return
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+    print("\nFinished processing all videos.")
 
 if __name__ == "__main__":
     main()
