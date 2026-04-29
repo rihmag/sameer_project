@@ -3,3 +3,5 @@ torchvision
 ultralytics
 opencv-python
 numpy
+streamlit
+mediapipe
