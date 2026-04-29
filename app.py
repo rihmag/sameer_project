@@ -18,7 +18,7 @@ def load_models():
         try:
             # Ensure these paths are correct relative to where you run the Streamlit app
             # or provide absolute paths.
-            weapon_detector = WeaponDetector(model_path="runs/detect/weapon_yolo_model9/weights/best.pt")
+            weapon_detector = WeaponDetector(model_path="runs/detect/weapon_yolo_model12/weights/best.pt")
             fight_model = YOLO("runs/detect/fight_detect_model2/weights/best.pt")
             st.success("Models loaded successfully!")
             return weapon_detector, fight_model
@@ -48,7 +48,7 @@ def detect_fights_wrapper(model_instance, frame, conf_threshold):
 
 # --- Sidebar Configuration ---
 st.sidebar.header("Configuration")
-source_option = st.sidebar.radio("Select Input Source", ("Webcam", "Upload Video"))
+source_option = st.sidebar.radio("Select Input Source", ("Webcam", "Upload Video", "Upload Image"))
 conf_threshold = st.sidebar.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.05)
 st.sidebar.markdown("---")
 
@@ -204,3 +204,53 @@ elif source_option == "Upload Video":
             st.success("Video processing complete.")
     else:
         st.info("Please upload a video file to start detection.")
+
+# --- Upload Image Input Logic ---
+elif source_option == "Upload Image":
+    st.header("Upload Image File")
+    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+
+    if uploaded_file is not None:
+        # Convert the uploaded file to an OpenCV image
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        frame = cv2.imdecode(file_bytes, 1)
+        
+        st.subheader("Original Image")
+        st.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_column_width=True)
+
+        with st.spinner("Analyzing image..."):
+            # Parallel detection using ThreadPoolExecutor for efficiency
+            executor = ThreadPoolExecutor(max_workers=2)
+            weapon_future = executor.submit(detect_weapons_wrapper, weapon_detector, frame, conf_threshold)
+            fight_future = executor.submit(detect_fights_wrapper, fight_model, frame, conf_threshold)
+
+            weapon_results, weapon_classes = weapon_future.result()
+            fight_results, fight_classes = fight_future.result()
+            executor.shutdown(wait=True)
+
+            # Annotation logic (consistent with existing video/webcam processing)
+            annotated_frame = weapon_detector.plot(weapon_results, generic_label=False)
+            
+            for r in fight_results:
+                if r.boxes is not None:
+                    for box in r.boxes:
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        cls_id = int(box.cls[0])
+                        class_name = fight_model.names[cls_id]
+                        conf = float(box.conf[0])
+
+                        cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                        label = f"FIGHT: {class_name} {conf:.2f}"
+                        (text_w, text_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+                        cv2.rectangle(annotated_frame, (x1, y1 - text_h - 10), (x1 + text_w, y1), (0, 0, 255), -1)
+                        cv2.putText(annotated_frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+            # Display Result
+            st.subheader("Detection Result")
+            annotated_frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+            st.image(annotated_frame_rgb, use_column_width=True)
+            
+            if weapon_classes or fight_classes:
+                st.success(f"Detections found: {', '.join(set(weapon_classes + fight_classes))}")
+            else:
+                st.info("No weapons or fights detected.")
